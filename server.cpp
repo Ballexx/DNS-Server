@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -30,52 +31,96 @@ static const uint32_t RCODE_MASK    = 0x000F;
 
 class Response{
     private:
-    int convert_to_16bit(const char*& buffer){
-        int value = static_cast<unsigned char> (buffer[0]);
-        value = value << 8;
-        value += static_cast<unsigned char> (buffer[1]);
+    uint32_t convert_to_16bit(const char* buffer){
+        uint32_t bit_value = static_cast<unsigned char>(buffer[0]);
+        bit_value = bit_value << 8;
+        bit_value += static_cast<unsigned char>(buffer[1]);
         buffer += 2;
-
-        return value;
+        return bit_value;
     }
+
+    void put_16bit(char* buffer, uint16_t value){
+        buffer[0] = (value & 0xFF00) >> 8;
+        buffer[1] = value & 0xFF;
+        buffer += 2;
+    }
+
+    uint16_t TID;
+    uint16_t BIT_FIELDS; 
+
+    uint16_t QR;
+    uint16_t OPCODE;
+    uint16_t AA;
+    uint16_t TC;
+    uint16_t RD;
+    uint16_t RA;
+    uint16_t Z;
+    uint16_t RCODE;
+
+    uint16_t QD_COUNT;
+    uint16_t AN_COUNT;
+    uint16_t NS_COUNT;
+    uint16_t AR_COUNT;
+
     public:
-    uint32_t TID;
-    uint32_t BIT_FIELDS; 
+    void decode_request(char* buffer){
 
-    uint32_t QR;
-    uint32_t OPCODE;
-    uint32_t AA;
-    uint32_t TC;
-    uint32_t RD;
-    uint32_t RA;
-    uint32_t RCODE;
+        for(int i = 0; i < 512; i++){
+            cout << buffer[i];
+        }
 
-    uint32_t QD_COUNT;
-    uint32_t AN_COUNT;
-    uint32_t NS_COUNT;
-    uint32_t AR_COUNT;
-    
+        cout << "done" << endl;
 
-    void build_response(const char* buffer){
-        uint32_t TID = convert_to_16bit(buffer);
-
+        TID =        convert_to_16bit(buffer);
         BIT_FIELDS = convert_to_16bit(buffer);
 
-        QR =      (BIT_FIELDS & QR_MASK)     >> 15;
-        OPCODE =  (BIT_FIELDS & OPCODE_MASK) >> 11;
-        AA =      (BIT_FIELDS & AA_MASK)     >> 10;
-        TC =      (BIT_FIELDS & TC_MASK)     >> 9;
-        RD =      (BIT_FIELDS & RD_MASK)     >> 8;
-        RA =      (BIT_FIELDS & RA_MASK)     >> 7;
-        RCODE =   (BIT_FIELDS & RCODE_MASK)  >> 0;
+        QR =      (BIT_FIELDS & QR_MASK);
+        OPCODE =  (BIT_FIELDS & OPCODE_MASK);
+        AA =      (BIT_FIELDS & AA_MASK);
+        TC =      (BIT_FIELDS & TC_MASK);
+        RD =      (BIT_FIELDS & RD_MASK);
+        RA =      (BIT_FIELDS & RA_MASK);
+        RCODE =   (BIT_FIELDS & RCODE_MASK);
 
         QD_COUNT = convert_to_16bit(buffer);
         AN_COUNT = convert_to_16bit(buffer);
         NS_COUNT = convert_to_16bit(buffer);
         AR_COUNT = convert_to_16bit(buffer);
+
+        encode_header(buffer);
+
+        for(int i = 0; i < 512; i++){
+            cout << buffer[i];
+        }
+
+        cout << "new" << endl;
+
+    }
+
+    void encode_header(char* buffer){
+        put_16bit(buffer, this->TID);
+        put_16bit(buffer, this->BIT_FIELDS);
+        put_16bit(buffer, this->QD_COUNT);
+        put_16bit(buffer, this->AN_COUNT);
+        put_16bit(buffer, this->NS_COUNT);
+        put_16bit(buffer, this->AR_COUNT);
+    }
+
+    void query_show(){
+        cout << this->TID
+             << this->QR
+             << this->OPCODE
+             << this->AA
+             << this->TC
+             << this->RD
+             << this->RA
+             << this->RCODE
+             << this->QD_COUNT
+             << this->AN_COUNT
+             << this->NS_COUNT
+             << this->AR_COUNT;
     }
 };
-
 
 int main(){
     int server_socket = create_socket();
@@ -85,6 +130,7 @@ int main(){
     uint16_t port = 8080;
 
     struct sockaddr_in socket_addr;
+
     socket_addr.sin_family      = AF_INET;
     socket_addr.sin_addr.s_addr = INADDR_ANY;
     socket_addr.sin_port        = htons(port);
@@ -119,9 +165,11 @@ int main(){
         int bytes = recvfrom(server_socket, buffer, buffer_len, 0, (struct sockaddr*)&client_addr, &addr_len);
 
         Response response;
-        response.build_response(buffer);
+        response.decode_request(buffer);
 
-        sendto(server_socket, buffer, bytes, 0, (struct sockaddr*)&client_addr, addr_len);
+        //memset(buffer, 0, buffer_len);
+        
+        sendto(server_socket, buffer, buffer_len, 0, (struct sockaddr*)&client_addr, addr_len);
     }
 
 }
