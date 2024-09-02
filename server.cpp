@@ -31,48 +31,55 @@ static const uint32_t RCODE_MASK    = 0x000F;
 
 class Response{
     private:
-    uint32_t convert_to_16bit(const char* buffer){
-        uint32_t bit_value = static_cast<unsigned char>(buffer[0]);
+    uint16_t buffer_index = 0;
+
+    uint32_t read_16bit(char* buffer){
+        uint32_t bit_value = static_cast<unsigned char>(buffer[buffer_index]);
+
         bit_value = bit_value << 8;
-        bit_value += static_cast<unsigned char>(buffer[1]);
-        buffer += 2;
+        bit_value += static_cast<unsigned char>(buffer[buffer_index + 1]);
+
+        buffer_index += 2;
         return bit_value;
     }
 
-    void put_16bit(char* buffer, uint16_t value){
-        buffer[0] = (value & 0xFF00) >> 8;
-        buffer[1] = value & 0xFF;
-        buffer += 2;
+    uint32_t read_query(char* buffer){
+        uint8_t header_len = 12;
+        uint8_t query_len = 13;
+
+        for(int i = header_len; i < header_len + query_len; i++){
+            cout << (buffer[i] << 8) << endl;
+        }
+        return 1;
     }
 
-    uint16_t TID;
-    uint16_t BIT_FIELDS; 
+    void put_16bit(char* buffer, uint32_t value){
 
-    uint16_t QR;
-    uint16_t OPCODE;
-    uint16_t AA;
-    uint16_t TC;
-    uint16_t RD;
-    uint16_t RA;
-    uint16_t Z;
-    uint16_t RCODE;
+    }
 
-    uint16_t QD_COUNT;
-    uint16_t AN_COUNT;
-    uint16_t NS_COUNT;
-    uint16_t AR_COUNT;
+    uint32_t TRANSACTION_ID;
+    uint32_t BIT_FIELDS; 
+
+    uint32_t QR;
+    uint32_t OPCODE;
+    uint32_t AA;
+    uint32_t TC;
+    uint32_t RD;
+    uint32_t RA;
+    uint32_t Z;
+    uint32_t RCODE;
+
+    uint32_t QD_COUNT;
+    uint32_t AN_COUNT;
+    uint32_t NS_COUNT;
+    uint32_t AR_COUNT;
+
+    uint32_t QUERY;
 
     public:
     void decode_request(char* buffer){
-
-        for(int i = 0; i < 512; i++){
-            cout << buffer[i];
-        }
-
-        cout << "done" << endl;
-
-        TID =        convert_to_16bit(buffer);
-        BIT_FIELDS = convert_to_16bit(buffer);
+        TRANSACTION_ID = read_16bit(&buffer[buffer_index]);
+        BIT_FIELDS =     read_16bit(&buffer[buffer_index]);
 
         QR =      (BIT_FIELDS & QR_MASK);
         OPCODE =  (BIT_FIELDS & OPCODE_MASK);
@@ -82,43 +89,14 @@ class Response{
         RA =      (BIT_FIELDS & RA_MASK);
         RCODE =   (BIT_FIELDS & RCODE_MASK);
 
-        QD_COUNT = convert_to_16bit(buffer);
-        AN_COUNT = convert_to_16bit(buffer);
-        NS_COUNT = convert_to_16bit(buffer);
-        AR_COUNT = convert_to_16bit(buffer);
+        QD_COUNT = read_16bit(&buffer[buffer_index]);
+        AN_COUNT = read_16bit(&buffer[buffer_index]);
+        NS_COUNT = read_16bit(&buffer[buffer_index]);
+        AR_COUNT = read_16bit(&buffer[buffer_index]);
 
-        encode_header(buffer);
-
-        for(int i = 0; i < 512; i++){
-            cout << buffer[i];
+        for(int i = 0; i < 13; i++){
+            cout << buffer[buffer_index+i];
         }
-
-        cout << "new" << endl;
-
-    }
-
-    void encode_header(char* buffer){
-        put_16bit(buffer, this->TID);
-        put_16bit(buffer, this->BIT_FIELDS);
-        put_16bit(buffer, this->QD_COUNT);
-        put_16bit(buffer, this->AN_COUNT);
-        put_16bit(buffer, this->NS_COUNT);
-        put_16bit(buffer, this->AR_COUNT);
-    }
-
-    void query_show(){
-        cout << this->TID
-             << this->QR
-             << this->OPCODE
-             << this->AA
-             << this->TC
-             << this->RD
-             << this->RA
-             << this->RCODE
-             << this->QD_COUNT
-             << this->AN_COUNT
-             << this->NS_COUNT
-             << this->AR_COUNT;
     }
 };
 
