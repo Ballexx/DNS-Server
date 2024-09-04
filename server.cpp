@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include "request.hpp"
 
 using namespace std;
 using namespace std::this_thread;
@@ -20,95 +21,6 @@ int create_socket(){
 
     return server_socket;
 }
-
-static const uint32_t QR_MASK       = 0x8000;
-static const uint32_t OPCODE_MASK   = 0x7800;
-static const uint32_t AA_MASK       = 0x0400;
-static const uint32_t TC_MASK       = 0x0200;
-static const uint32_t RD_MASK       = 0x0100;
-static const uint32_t RA_MASK       = 0x8000;
-static const uint32_t RCODE_MASK    = 0x000F;
-
-class Response{
-    private:
-    uint16_t buffer_index = 0;
-
-    uint32_t read_16bit(char* buffer){
-        uint32_t bit_value = static_cast<unsigned char>(buffer[buffer_index]);
-
-        bit_value = bit_value << 8;
-        bit_value += static_cast<unsigned char>(buffer[buffer_index + 1]);
-
-        buffer_index += 2;
-        return bit_value;
-    }
-
-    uint32_t read_query(char* buffer){
-        uint8_t header_len = 12;
-        uint8_t query_len = 13;
-
-        for(int i = header_len; i < header_len + query_len; i++){
-            cout << (buffer[i] << 8) << endl;
-        }
-        return 1;
-    }
-
-    void put_16bit(char* buffer, uint32_t value){
-
-    }
-
-    uint32_t TRANSACTION_ID;
-    uint32_t BIT_FIELDS; 
-
-    uint32_t QR;
-    uint32_t OPCODE;
-    uint32_t AA;
-    uint32_t TC;
-    uint32_t RD;
-    uint32_t RA;
-    uint32_t Z;
-    uint32_t RCODE;
-
-    uint32_t QD_COUNT;
-    uint32_t AN_COUNT;
-    uint32_t NS_COUNT;
-    uint32_t AR_COUNT;
-
-    uint32_t QUERY;
-
-    uint32_t CLASS;
-    uint32_t TYPE;
-
-    public:
-    void decode_request(char* buffer){
-        TRANSACTION_ID = read_16bit(&buffer[buffer_index]);
-        BIT_FIELDS =     read_16bit(&buffer[buffer_index]);
-
-        QR =      (BIT_FIELDS & QR_MASK);
-        OPCODE =  (BIT_FIELDS & OPCODE_MASK);
-        AA =      (BIT_FIELDS & AA_MASK);
-        TC =      (BIT_FIELDS & TC_MASK);
-        RD =      (BIT_FIELDS & RD_MASK);
-        RA =      (BIT_FIELDS & RA_MASK);
-        RCODE =   (BIT_FIELDS & RCODE_MASK);
-
-        QD_COUNT = read_16bit(&buffer[buffer_index]);
-        AN_COUNT = read_16bit(&buffer[buffer_index]);
-        NS_COUNT = read_16bit(&buffer[buffer_index]);
-        AR_COUNT = read_16bit(&buffer[buffer_index]);
-
-        buffer_index += 1; //Skip starting byte for query
-
-        for(;;){
-            cout << buffer[buffer_index] << endl;
-            buffer_index += 1;
-
-            if(buffer[buffer_index] == 0x00){
-                break;
-            }
-        }
-    }
-};
 
 int main(){
     int server_socket = create_socket();
@@ -151,13 +63,10 @@ int main(){
 
     while(true){
         int bytes = recvfrom(server_socket, buffer, buffer_len, 0, (struct sockaddr*)&client_addr, &addr_len);
-
-        Response response;
-        response.decode_request(buffer);
-
-        //memset(buffer, 0, buffer_len);
         
+        Request request;
+        request.decode_request(buffer);
+
         sendto(server_socket, buffer, buffer_len, 0, (struct sockaddr*)&client_addr, addr_len);
     }
-
 }
