@@ -76,6 +76,9 @@ class Response{
 
     uint32_t QUERY;
 
+    uint32_t CLASS;
+    uint32_t TYPE;
+
     public:
     void decode_request(char* buffer){
         TRANSACTION_ID = read_16bit(&buffer[buffer_index]);
@@ -94,8 +97,15 @@ class Response{
         NS_COUNT = read_16bit(&buffer[buffer_index]);
         AR_COUNT = read_16bit(&buffer[buffer_index]);
 
-        for(int i = 0; i < 13; i++){
-            cout << buffer[buffer_index+i];
+        buffer_index += 1; //Skip starting byte for query
+
+        for(;;){
+            cout << buffer[buffer_index] << endl;
+            buffer_index += 1;
+
+            if(buffer[buffer_index] == 0x00){
+                break;
+            }
         }
     }
 };
