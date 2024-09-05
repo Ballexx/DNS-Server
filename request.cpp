@@ -14,7 +14,6 @@ static const uint16_t RCODE_MASK    = 0x000F;
 
 uint16_t TRANSACTION_ID;
 uint16_t BIT_FIELDS; 
-
 uint16_t QR;
 uint16_t OPCODE;
 uint16_t AA;
@@ -23,14 +22,11 @@ uint16_t RD;
 uint16_t RA;
 uint16_t Z;
 uint16_t RCODE;
-
 uint16_t QD_COUNT;
 uint16_t AN_COUNT;
 uint16_t NS_COUNT;
 uint16_t AR_COUNT;
-
 uint16_t QUERY;
-
 uint16_t CLASS;
 uint16_t TYPE;
 
@@ -43,14 +39,10 @@ uint16_t to_16bit(char* buffer, uint8_t index){
 };
 
 void Request::decode_request(char* buffer){
-    uint16_t buffer_index = 0;
-
+    uint8_t buffer_index = 0;
     uint8_t domain_len;
-    
+
     TRANSACTION_ID = to_16bit(buffer, buffer_index);
-
-    cout << TRANSACTION_ID << endl;
-
     BIT_FIELDS =     to_16bit(buffer, buffer_index);
 
     QR =      (BIT_FIELDS & QR_MASK);
@@ -86,4 +78,7 @@ void Request::decode_request(char* buffer){
             break;
         }
     }
+
+    TYPE  = to_16bit(buffer, buffer_index);
+    CLASS = to_16bit(buffer, buffer_index);
 }
