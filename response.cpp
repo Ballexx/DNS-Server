@@ -1,8 +1,32 @@
 #include <stdint.h>
+#include <fstream>
 #include <iostream>
 #include "response.hpp"
 
 using namespace std;
+
+const uint32_t ZONE_MAX_LEN = 1000;
+string zones[ZONE_MAX_LEN];
+
+int init_zonedata(const char* path){
+    uint32_t zone_index = 0;
+    
+    string line;
+    ifstream zonedata (path);
+
+    if (zonedata.is_open()){
+        while ( getline (zonedata,line) )
+        {
+            zones[zone_index] = line;
+            zone_index += 1;
+        }
+        zonedata.close();
+        return 0;
+    }
+    cout << "Unable to open file";
+    
+    return 1;
+}
 
 const char* get_record_type(uint16_t value){
     switch(value){
@@ -59,7 +83,7 @@ char to_char(uint16_t hex_val){
 
 void Response::build_response(request_data request){
 
-    cout << request.domain << endl;
+    cout << zones[0] << endl;
 
     const char* record_type = get_record_type(request.TYPE);
     const char* dns_class   = get_dns_class(request.CLASS);

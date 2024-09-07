@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "request.hpp"
+#include "response.hpp"
 
 using namespace std;
 using namespace std::this_thread;
@@ -60,6 +61,8 @@ int main(){
 
     struct sockaddr_in client_addr;
     socklen_t addr_len = sizeof (client_addr);
+
+    init_zonedata("data/zonedata");
 
     while(true){
         int bytes = recvfrom(server_socket, buffer, buffer_len, 0, (struct sockaddr*)&client_addr, &addr_len);
