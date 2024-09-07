@@ -6,7 +6,29 @@
 using namespace std;
 
 const uint32_t ZONE_MAX_LEN = 1000;
-string zones[ZONE_MAX_LEN];
+struct zone{
+    string host;
+    string TTL;
+    string rclass;
+    string rtype;
+    string rdata;
+};
+zone zones[ZONE_MAX_LEN];
+
+uint16_t line_index = 0;
+
+string split_data(string line){
+    string temp;
+
+    for(;;){
+        if(line[line_index] == ' ' || line_index == line.length()){
+            line_index += 1;
+            return temp;
+        }
+        temp += line[line_index];
+        line_index += 1;
+    }  
+}
 
 int init_zonedata(const char* path){
     uint32_t zone_index = 0;
@@ -15,9 +37,23 @@ int init_zonedata(const char* path){
     ifstream zonedata (path);
 
     if (zonedata.is_open()){
-        while ( getline (zonedata,line) )
+        while (getline(zonedata, line))
         {
-            zones[zone_index] = line;
+            string host    = split_data(line);
+            string TTL     = split_data(line);
+            string rclass  = split_data(line);
+            string rtype   = split_data(line);
+            string rdata   = split_data(line);
+
+            line_index = 0;
+
+            zones[zone_index] = {
+                host,
+                TTL,
+                rclass,
+                rtype,
+                rdata
+            };
             zone_index += 1;
         }
         zonedata.close();
@@ -82,8 +118,7 @@ char to_char(uint16_t hex_val){
 }
 
 void Response::build_response(request_data request){
-
-    cout << zones[0] << endl;
+    cout << zones[1].rdata << endl;
 
     const char* record_type = get_record_type(request.TYPE);
     const char* dns_class   = get_dns_class(request.CLASS);
