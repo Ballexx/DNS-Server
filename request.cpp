@@ -12,6 +12,8 @@ static const uint16_t RD_MASK       = 0x0100;
 static const uint16_t RA_MASK       = 0x8000;
 static const uint16_t RCODE_MASK    = 0x000F;
 
+uint16_t buffer_index;
+
 uint16_t TRANSACTION_ID;
 uint16_t BIT_FIELDS; 
 uint16_t QR;
@@ -30,20 +32,38 @@ uint16_t QUERY;
 uint16_t CLASS;
 uint16_t TYPE;
 
-uint16_t to_16bit(char* buffer, uint8_t index){
-    uint16_t first_byte_val  = static_cast<unsigned char>(buffer[index]);
-    uint16_t second_byte_val = static_cast<unsigned char>(buffer[index + 1]);
+uint16_t to_16bit(char* buffer){
+    uint16_t first_byte_val  = static_cast<unsigned char>(buffer[buffer_index]);
+    uint16_t second_byte_val = static_cast<unsigned char>(buffer[buffer_index + 1]);
 
-    index += 2;
+    buffer_index += 2;
     return (first_byte_val << 8) | second_byte_val;
 };
 
+const char* get_record_type(uint16_t value){
+    switch(value){
+        case 0x01:
+            return "A";
+        case 0x1c:
+            return "AAAA";
+        case 0x0c:
+            return "AFSDB";
+        case 0x02:
+            return "NS";
+        case 0x05:
+            return "CNAME";
+        case 0x0F:
+            return "MX";
+    }
+    return "UNKNOWN RECORD";
+}
+
 void Request::decode_request(char* buffer){
-    uint8_t buffer_index = 0;
+    buffer_index = 0;
     uint8_t domain_len;
 
-    TRANSACTION_ID = to_16bit(buffer, buffer_index);
-    BIT_FIELDS =     to_16bit(buffer, buffer_index);
+    TRANSACTION_ID = to_16bit(buffer);
+    BIT_FIELDS =     to_16bit(buffer);
 
     QR =      (BIT_FIELDS & QR_MASK);
     OPCODE =  (BIT_FIELDS & OPCODE_MASK);
@@ -53,22 +73,21 @@ void Request::decode_request(char* buffer){
     RA =      (BIT_FIELDS & RA_MASK);
     RCODE =   (BIT_FIELDS & RCODE_MASK);
 
-    QD_COUNT = to_16bit(buffer, buffer_index);
-    AN_COUNT = to_16bit(buffer, buffer_index);
-    NS_COUNT = to_16bit(buffer, buffer_index);
-    AR_COUNT = to_16bit(buffer, buffer_index);
+    QD_COUNT = to_16bit(buffer);
+    AN_COUNT = to_16bit(buffer);
+    NS_COUNT = to_16bit(buffer);
+    AR_COUNT = to_16bit(buffer);
 
     buffer_index += 1; //Skip starting byte for query
 
-    const uint8_t DOMAIN_LEN_BUFFER = 253; //Max possible length for a domain
-    char domain[DOMAIN_LEN_BUFFER];
+    string domain;
 
     for(int i = 0;;i++){
         if(buffer[buffer_index] == 0x04 || buffer[buffer_index] == 0x03){ //Hexvalue of byte for separator of n-level domain is 4 whilst 3 for top level domain
-            domain[i] = '.';
+            domain = domain + '.';
         }
         else{
-            domain[i] = buffer[buffer_index];
+            domain = domain + buffer[buffer_index];
         }
 
         domain_len = i;
@@ -78,7 +97,13 @@ void Request::decode_request(char* buffer){
             break;
         }
     }
+    buffer_index += 1; //Skip empty byte
 
-    TYPE  = to_16bit(buffer, buffer_index);
-    CLASS = to_16bit(buffer, buffer_index);
+    TYPE  = to_16bit(buffer);
+    CLASS = to_16bit(buffer);
+
+    const char* record_type = get_record_type(TYPE);
+
+    cout << domain << endl;
+    cout << record_type << endl;
 }
