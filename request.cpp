@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <iostream>
 #include "request.hpp"
+#include "response.hpp"
 
 using namespace std;
 
@@ -22,7 +23,6 @@ uint16_t AA;
 uint16_t TC;
 uint16_t RD;
 uint16_t RA;
-uint16_t Z;
 uint16_t RCODE;
 uint16_t QD_COUNT;
 uint16_t AN_COUNT;
@@ -32,6 +32,8 @@ uint16_t QUERY;
 uint16_t CLASS;
 uint16_t TYPE;
 
+string domain;
+
 uint16_t to_16bit(char* buffer){
     uint16_t first_byte_val  = static_cast<unsigned char>(buffer[buffer_index]);
     uint16_t second_byte_val = static_cast<unsigned char>(buffer[buffer_index + 1]);
@@ -39,24 +41,6 @@ uint16_t to_16bit(char* buffer){
     buffer_index += 2;
     return (first_byte_val << 8) | second_byte_val;
 };
-
-const char* get_record_type(uint16_t value){
-    switch(value){
-        case 0x01:
-            return "A";
-        case 0x1c:
-            return "AAAA";
-        case 0x0c:
-            return "AFSDB";
-        case 0x02:
-            return "NS";
-        case 0x05:
-            return "CNAME";
-        case 0x0F:
-            return "MX";
-    }
-    return "UNKNOWN RECORD";
-}
 
 void Request::decode_request(char* buffer){
     buffer_index = 0;
@@ -80,8 +64,6 @@ void Request::decode_request(char* buffer){
 
     buffer_index += 1; //Skip starting byte for query
 
-    string domain;
-
     for(int i = 0;;i++){
         if(buffer[buffer_index] == 0x04 || buffer[buffer_index] == 0x03){ //Hexvalue of byte for separator of n-level domain is 4 whilst 3 for top level domain
             domain = domain + '.';
@@ -102,8 +84,22 @@ void Request::decode_request(char* buffer){
     TYPE  = to_16bit(buffer);
     CLASS = to_16bit(buffer);
 
-    const char* record_type = get_record_type(TYPE);
-
-    cout << domain << endl;
-    cout << record_type << endl;
+    Response response;
+    response.build_response({
+        domain,
+        TRANSACTION_ID,
+        QR,
+        OPCODE,
+        AA,
+        TC,
+        RD,
+        RA,
+        RCODE,
+        QD_COUNT,
+        AN_COUNT,
+        NS_COUNT,
+        AR_COUNT,
+        CLASS,
+        TYPE
+    });
 }
