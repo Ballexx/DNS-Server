@@ -11,6 +11,7 @@ class Response{
     struct request_data{
         string   domain;
         uint16_t TRANSACTION_ID;
+        uint16_t BIT_FIELDS;
         uint16_t QR;
         uint16_t OPCODE;
         uint16_t AA;

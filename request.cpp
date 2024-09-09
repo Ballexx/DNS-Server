@@ -43,6 +43,7 @@ uint16_t to_16bit(char* buffer){
 };
 
 void Request::decode_request(char* buffer){
+    domain = "";
     buffer_index = 0;
     uint8_t domain_len;
 
@@ -65,7 +66,7 @@ void Request::decode_request(char* buffer){
     buffer_index += 1; //Skip starting byte for query
 
     for(int i = 0;;i++){
-        if(buffer[buffer_index] == 0x04 || buffer[buffer_index] == 0x03){ //Hexvalue of byte for separator of n-level domain is 4 whilst 3 for top level domain
+        if(buffer[buffer_index] <= 0x05){
             domain = domain + '.';
         }
         else{
@@ -88,6 +89,7 @@ void Request::decode_request(char* buffer){
     response.build_response({
         domain,
         TRANSACTION_ID,
+        BIT_FIELDS,
         QR,
         OPCODE,
         AA,

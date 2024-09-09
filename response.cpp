@@ -98,6 +98,7 @@ const char* get_dns_class(uint16_t value){
 struct request_data{
     string   domain;
     uint16_t TRANSACTION_ID;
+    uint16_t BIT_FIELDS;
     uint16_t QR;
     uint16_t OPCODE;
     uint16_t AA;
@@ -117,9 +118,40 @@ char to_char(uint16_t hex_val){
     return static_cast<char>(hex_val);
 }
 
-void Response::build_response(request_data request){
-    cout << zones[1].rdata << endl;
+uint16_t buffer_index = 0;
 
+void encode_to_buffer(uint16_t value, char* buffer){
+    buffer[buffer_index] = ((value >> 8) & 0xff);
+    buffer[buffer_index]  = (value & 0xff);
+}
+
+void Response::build_response(request_data request){    
+    buffer_index = 0;
+    char response_buffer[512];
+
+    encode_to_buffer(request.TRANSACTION_ID, response_buffer);
+    encode_to_buffer(request.BIT_FIELDS, response_buffer);
+    
+    if(request.QD_COUNT == 1){
+        encode_to_buffer(request.QD_COUNT, response_buffer);
+    }
+    else{
+        
+    }
+    
+    uint16_t answer_count;
+    
     const char* record_type = get_record_type(request.TYPE);
     const char* dns_class   = get_dns_class(request.CLASS);
+
+    for(int i = 0; i < sizeof(zones) / sizeof(zones[0]);){
+        if(zones[i].rtype != record_type){
+            continue;
+        }
+
+        answer_count += 1;
+    }
+
+
+
 }
