@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <iostream>
+#include <cstring>
 #include "request.hpp"
 #include "response.hpp"
 
@@ -42,10 +43,31 @@ uint16_t to_16bit(char* buffer){
     return (first_byte_val << 8) | second_byte_val;
 };
 
+uint8_t domain_len;
+
+string read_domain(char* buffer){
+    string read_data = "";
+
+    for(int i = 0;;i++){
+        if(buffer[buffer_index] <= 0x05){
+            read_data = read_data + '.';
+        }
+        else{
+            read_data = read_data + buffer[buffer_index];
+        }
+
+        domain_len = i;
+        buffer_index += 1;
+
+        if(buffer[buffer_index] == 0x00){
+            return read_data;
+        }
+    }
+}
+
 void Request::decode_request(char* buffer){
-    domain = "";
     buffer_index = 0;
-    uint8_t domain_len;
+    domain = "";
 
     TRANSACTION_ID = to_16bit(buffer);
     BIT_FIELDS =     to_16bit(buffer);
@@ -63,27 +85,16 @@ void Request::decode_request(char* buffer){
     NS_COUNT = to_16bit(buffer);
     AR_COUNT = to_16bit(buffer);
 
-    buffer_index += 1; //Skip starting byte for query
+    buffer_index += 1; //Skip empty byte
 
-    for(int i = 0;;i++){
-        if(buffer[buffer_index] <= 0x05){
-            domain = domain + '.';
-        }
-        else{
-            domain = domain + buffer[buffer_index];
-        }
+    domain = read_domain(buffer);
 
-        domain_len = i;
-        buffer_index += 1;
-
-        if(buffer[buffer_index] == 0x00){
-            break;
-        }
-    }
     buffer_index += 1; //Skip empty byte
 
     TYPE  = to_16bit(buffer);
     CLASS = to_16bit(buffer);
+
+    memset(buffer, 0, sizeof(buffer));
 
     Response response;
     response.build_response({
@@ -103,5 +114,5 @@ void Request::decode_request(char* buffer){
         AR_COUNT,
         CLASS,
         TYPE
-    });
+    }, buffer);
 }

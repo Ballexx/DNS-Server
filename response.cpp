@@ -118,22 +118,22 @@ char to_char(uint16_t hex_val){
     return static_cast<char>(hex_val);
 }
 
-uint16_t buffer_index = 0;
+uint16_t buf_index = 0;
 
 void encode_to_buffer(uint16_t value, char* buffer){
-    buffer[buffer_index] = ((value >> 8) & 0xff);
-    buffer[buffer_index]  = (value & 0xff);
+    buffer[buf_index]  = (value & 0xff);
+    buffer[buf_index+1]  = ((value >> 8) & 0xff);
+    buf_index += 2;
 }
 
-void Response::build_response(request_data request){    
-    buffer_index = 0;
-    char response_buffer[512];
-
-    encode_to_buffer(request.TRANSACTION_ID, response_buffer);
-    encode_to_buffer(request.BIT_FIELDS, response_buffer);
+void Response::build_response(request_data request, char* buffer){    
+    buf_index = 0;
+    
+    encode_to_buffer(request.TRANSACTION_ID, buffer);
+    encode_to_buffer(request.BIT_FIELDS, buffer);
     
     if(request.QD_COUNT == 1){
-        encode_to_buffer(request.QD_COUNT, response_buffer);
+        encode_to_buffer(request.QD_COUNT, buffer);
     }
     else{
         
@@ -146,12 +146,11 @@ void Response::build_response(request_data request){
 
     for(int i = 0; i < sizeof(zones) / sizeof(zones[0]);){
         if(zones[i].rtype != record_type){
-            continue;
+            answer_count += 1;
         }
-
-        answer_count += 1;
     }
 
-
-
+    encode_to_buffer(answer_count, buffer);
+    encode_to_buffer(request.NS_COUNT, buffer);
+    encode_to_buffer(request.AR_COUNT, buffer);
 }

@@ -70,6 +70,8 @@ int main(){
         Request request;
         request.decode_request(buffer);
 
+        cout << buffer[0] << endl;
+
         sendto(server_socket, buffer, buffer_len, 0, (struct sockaddr*)&client_addr, addr_len);
     }
 }

@@ -23,4 +23,5 @@ class Request{
     uint16_t TYPE;
 
     void decode_request(char* buffer);
+    void respond_to_request(char* buffer);
 };

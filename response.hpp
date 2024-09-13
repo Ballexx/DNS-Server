@@ -26,5 +26,5 @@ class Response{
         uint16_t CLASS;
         uint16_t TYPE;
     };
-    void build_response(struct request_data data);  
+    void build_response(struct request_data data, char* buffer);  
 };
