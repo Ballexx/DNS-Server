@@ -94,7 +94,7 @@ void Request::decode_request(char* buffer){
     TYPE  = to_16bit(buffer);
     CLASS = to_16bit(buffer);
 
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0x00, sizeof(buffer));
 
     Response response;
     response.build_response({

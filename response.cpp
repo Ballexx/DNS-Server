@@ -121,8 +121,8 @@ char to_char(uint16_t hex_val){
 uint16_t buf_index = 0;
 
 void encode_to_buffer(uint16_t value, char* buffer){
-    buffer[buf_index]  = (value & 0xff);
-    buffer[buf_index+1]  = ((value >> 8) & 0xff);
+    buffer[buf_index+1]  = (value & 0xff);
+    buffer[buf_index]  = ((value >> 8) & 0xff);
     buf_index += 2;
 }
 
@@ -144,7 +144,7 @@ void Response::build_response(request_data request, char* buffer){
     const char* record_type = get_record_type(request.TYPE);
     const char* dns_class   = get_dns_class(request.CLASS);
 
-    for(int i = 0; i < sizeof(zones) / sizeof(zones[0]);){
+    for(int i = 0; i < sizeof(zones) / sizeof(zones[0]); i++){
         if(zones[i].rtype != record_type){
             answer_count += 1;
         }
